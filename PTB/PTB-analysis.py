@@ -23,12 +23,13 @@ def main():
     y=md.Preterm.values
     X=df.values
     np.random.seed(1)
+    df=df.loc[:, (df>0).mean(axis=0)>0.25]
     X = clr(1e-6 + df.values )
 
     loo=LeaveOneOut()
     vals = [ LogisticRegressionCV(Cs=np.logspace(-3, 3, 7),
                                   max_iter=100, 
-                                  solver='liblinear'
+                                  solver='newton-cg'
                                  )\
                         .fit(X[train_index], y[train_index])\
                         .predict_proba(X[test_index])[:, 1][0]
@@ -40,8 +41,7 @@ def main():
     for train_index, test_index in loo.split(X):    
         lr = LogisticRegressionCV(Cs=np.logspace(-3, 3, 7),
                                   max_iter=100,  
-                                  solver='liblinear'
-    #                               solver='newton-cg',
+                                  solver='newton-cg',
                                   )
 
         inds = train_index != train_index[ np.random.choice( np.where( y[train_index] 
@@ -87,7 +87,6 @@ def main():
                  ci=0
                  )
     ax.legend_.set_title(None)
-    plt.show()
 
     from sklearn.metrics import roc_curve, auc
     sns.set(rc={'axes.facecolor':'white', 
@@ -130,7 +129,8 @@ def main():
                format='pdf', 
                dpi=900, 
                bbox_inches='tight')
-
+    
+    np.random.seed(1)
     all_group_preds = []
     for __ in range(10):
         vals_corrected=[]

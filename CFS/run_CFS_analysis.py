@@ -17,7 +17,6 @@ from sklearn.utils.validation import _num_samples, check_array, column_or_1d
 class RebalancedLeaveOneOut(BaseCrossValidator):
     
     def split(self, X, y, groups=None, seed=None):
-        
         if seed is not None:
             np.random.seed(seed)
             
@@ -67,10 +66,6 @@ class RebalancedLeaveOneOut(BaseCrossValidator):
             raise ValueError("The 'X' parameter should not be None.")
         return _num_samples(X)
 
-
-# In[4]:
-
-
 import os
 import numpy as np
 np.random.seed(1)
@@ -83,10 +78,45 @@ from PhageIPSeq_CFS.helpers import get_data_with_outcome, split_xy_df_and_filter
 
 def main():
 
-    get_ipython().run_cell_magic('time', '', "np.random.seed(1)\nres = {}\nfor estimator_name, estimator_info in predictors_info.items():\n    estimator = estimator_info['predictor_class'](**estimator_info['predictor_kwargs'])\n    x, y = split_xy_df_and_filter_by_threshold(\n        get_data_with_outcome(with_oligos=False, with_bloodtests=True, imputed=False))\n    res[estimator_name] = pd.Series(index=y.index,\n                                    data=cross_val_predict(estimator, \n                                                           x, \n                                                           y,\n                                                           cv=LeaveOneOut(),## run LOOCV\n                                                           method='predict_proba')[:, 1])\n\n    \nres = pd.DataFrame(res)")
+    np.random.seed(1)
+    res = {}
+    for estimator_name, estimator_info in predictors_info.items():
+        estimator = estimator_info['predictor_class'](**estimator_info['predictor_kwargs'])
+        x, y = split_xy_df_and_filter_by_threshold(
+            get_data_with_outcome(with_oligos=False, 
+                                  with_bloodtests=True, 
+                                  imputed=False))
+        
+        res[estimator_name] = pd.Series(index=y.index,
+                                        data=cross_val_predict(estimator, 
+                                                               x, 
+                                                               y,
+                                                               cv=LeaveOneOut(),## run LOOCV
+                                                               method='predict_proba'
+                                                               )[:, 1])
+        
+        
+        
+    res = pd.DataFrame(res)
 
 
-    get_ipython().run_cell_magic('time', '', "np.random.seed(1)\nres2 = {}\nfor estimator_name, estimator_info in predictors_info.items():\n    estimator = estimator_info['predictor_class'](**estimator_info['predictor_kwargs'])\n    x, y = split_xy_df_and_filter_by_threshold(\n        get_data_with_outcome(with_oligos=False, with_bloodtests=True, imputed=False))\n    res2[estimator_name] = pd.Series(index=y.index,\n                                    data=cross_val_predict(estimator, \n                                                           x, \n                                                           y,\n                                                           cv=RebalancedLeaveOneOut(), ## run RLOOCV\n                                                           method='predict_proba')[:, 1])\n\n    \n    \nres2 = pd.DataFrame(res2)")
+    
+    np.random.seed(1)
+    res2 = {}
+    for estimator_name, estimator_info in predictors_info.items():
+        estimator = estimator_info['predictor_class'](**estimator_info['predictor_kwargs'])
+        x, y = split_xy_df_and_filter_by_threshold(
+            get_data_with_outcome(with_oligos=False, 
+                                  with_bloodtests=True, 
+                                  imputed=False))
+        res2[estimator_name] = pd.Series(index=y.index,
+                                         data=cross_val_predict(estimator, 
+                                                                x, 
+                                                                y,
+                                                                cv=RebalancedLeaveOneOut(), ## run RLOOCV
+                                                                method='predict_proba')[:, 1])
+        
+    res2 = pd.DataFrame(res2)
 
 
     from sklearn.metrics import roc_auc_score
@@ -135,41 +165,39 @@ def main():
                 }, 
            font_scale=3)
 
-    plt.figure(figsize=(12,12))
-    ax = sns.lineplot(x='FPR', 
-                 y='TPR', 
-                 hue='Group',
-                 linewidth=5, 
-                 data=rocplotdf_gbr, 
-                 ci=0
-                 )
-    ax.legend_.set_title(None)
-    plt.show()
+#     plt.figure(figsize=(12,12))
+#     ax = sns.lineplot(x='FPR', 
+#                  y='TPR', 
+#                  hue='Group',
+#                  linewidth=5, 
+#                  data=rocplotdf_gbr, 
+#                  ci=0
+#                  )
+#     ax.legend_.set_title(None)
 
-    sns.set(rc={'axes.facecolor':'white', 
-                'figure.facecolor':'white', 
-                'axes.edgecolor':'black', 
-                'grid.color': 'black'
-                }, 
-           font_scale=3)
+#     sns.set(rc={'axes.facecolor':'white', 
+#                 'figure.facecolor':'white', 
+#                 'axes.edgecolor':'black', 
+#                 'grid.color': 'black'
+#                 }, 
+#            font_scale=3)
 
-    plt.figure(figsize=(12, 12))
-    ax = sns.lineplot(x='FPR', 
-                 y='TPR', 
-                 hue='Group',
-                 linewidth=5, 
-                 data=rocplotdf_xgboost, 
-                 ci=0
-                 )
-    ax.legend_.set_title(None)
-    plt.show()
+#     plt.figure(figsize=(12, 12))
+#     ax = sns.lineplot(x='FPR', 
+#                  y='TPR', 
+#                  hue='Group',
+#                  linewidth=5, 
+#                  data=rocplotdf_xgboost, 
+#                  ci=0
+#                  )
+#     ax.legend_.set_title(None)
 
-    sns.set(rc={'axes.facecolor':'white', 
-                'figure.facecolor':'white', 
-                'axes.edgecolor':'black', 
-                'grid.color': 'black'
-                }, 
-           font_scale=3)
+#     sns.set(rc={'axes.facecolor':'white', 
+#                 'figure.facecolor':'white', 
+#                 'axes.edgecolor':'black', 
+#                 'grid.color': 'black'
+#                 }, 
+#            font_scale=3)
 
     plt.figure(figsize=(12, 12))
     ax = sns.lineplot(x='FPR', 
@@ -193,7 +221,7 @@ def main():
                format='pdf', 
                dpi=900, 
                bbox_inches='tight')
-    plt.show()
+#     plt.show()
 
 
     plt.figure(figsize=(12, 12))
@@ -218,12 +246,13 @@ def main():
                format='pdf', 
                dpi=900, 
                bbox_inches='tight')
-    plt.show()
+#     plt.show()
 
     multiple_res_base=[]
     np.random.seed(1)
-    for __ in range(10):
+    for ss in range(10):
         res = {}
+        np.random.seed(ss)
         for estimator_name, estimator_info in predictors_info.items():
             estimator = estimator_info['predictor_class'](**estimator_info['predictor_kwargs'])
             x, y = split_xy_df_and_filter_by_threshold(
@@ -243,16 +272,16 @@ def main():
         print(roc_auc_score( y, res.GBR ))
 
     multiple_res=[]
-    np.random.seed(1)
-    for __ in range(10):
+#     np.random.seed(1)
+    for ss in range(10):
         res2 = {}
+        np.random.seed(ss)
         for estimator_name, estimator_info in predictors_info.items():
             estimator = estimator_info['predictor_class'](**estimator_info['predictor_kwargs'])
             x, y = split_xy_df_and_filter_by_threshold(
                                     get_data_with_outcome(with_oligos=False, 
                                                           with_bloodtests=True, 
                                                           imputed=False) )
-
             res2[estimator_name] = pd.Series(index=y.index,
                                             data=cross_val_predict(estimator, 
                                                              x, 

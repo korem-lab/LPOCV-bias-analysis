@@ -13,6 +13,11 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import roc_curve
 
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import LeaveOneOut
+from rebalancedleaveoneout import RebalancedLeaveOneOut
+from sklearn.linear_model import LogisticRegression
+
 def main():
 
     x1 = pd.read_csv('no-correction-results.csv', index_col=0)
@@ -194,7 +199,64 @@ def main():
                dpi=900, 
                bbox_inches='tight')
     
-    
+    x1['AMCD4']=x1['Activated_CD4_memory_T_CSx']
+    x1.loc[x1['Activated_CD4_memory_T_CSx']>.1, 'AMCD4']= \
+                x1.loc[x1['Activated_CD4_memory_T_CSx']<.1, 'Activated_CD4_memory_T_CSx'].max()
+
+    X = StandardScaler().fit_transform(
+                    x1[['AMCD4','TCR_clonotype_diversity_ShannonEntropy']]
+                            )
+    y = x1.Severe_irAE.values
+
+    np.random.seed(1)
+    loo=LeaveOneOut()
+    regs=np.logspace(-10, 6, 17)
+    regs=np.logspace(-6, 6, 13)
+    baseline_perfs = [ roc_auc_score(y, 
+                                     [ LogisticRegression(C=reg_level, 
+                                                         )\
+                                        .fit(X[train_index], y[train_index])\
+                                        .predict_proba(X[test_index]
+                                                    )[:, 1][0]
+                                  for train_index, test_index in loo.split(X, y) ]
+                                    )
+                        for reg_level in regs ]
+
+    np.random.seed(1)
+    regs=np.logspace(-6, 6, 13)
+    rloo=RebalancedLeaveOneOut()
+    rloocv_perfs = [ roc_auc_score(y, 
+                                     [ LogisticRegression(C=reg_level,
+                                                         )\
+                                        .fit(X[train_index], y[train_index])\
+                                        .predict_proba(X[test_index]
+                                                    )[:, 1][0]
+                                  for train_index, test_index in rloo.split(X, 
+                                                                            y, 
+                                                                            seed=1) ]
+                                    )
+                        for reg_level in regs ]
+
+
+    pd.set_option('display.precision', 3)
+    qqq=pd.DataFrame({'LOOCV':baseline_perfs, 
+                  'RLOOCV':rloocv_perfs}, 
+                   index=regs
+                 ).T
+
+    qqq.style.background_gradient(cmap ='coolwarm', 
+                                           vmin=qqq.values.min(), 
+                                          vmax=qqq.values.max(), 
+                                          )\
+                .set_properties(**{'font-size': '20px'})
+
+    qqq.round(3).style.background_gradient(cmap ='coolwarm', 
+                                           vmin=qqq.values.min(), 
+                                          vmax=qqq.values.max(), 
+                                          )\
+                .set_properties(**{'font-size': '20px'}
+                            ).to_excel('../plots-latest/ICI-regularization.xlsx')
+
     
 if __name__=='__main__':
     main()
