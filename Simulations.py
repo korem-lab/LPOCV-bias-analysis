@@ -394,10 +394,41 @@ def main():
 
 
 
-    get_ipython().run_cell_magic('time', '', "plt.figure(figsize=(12,7))\nsns.violinplot(x='Class balance', \n               y='Prediction', \n               data =  pd.concat( [ pd.DataFrame({'Prediction':all_ps[i], \n                                               'Class balance':round(class_ranges[i], \n                                                                     2)\n                                              })\n                                       for i in range(len(all_ps)) ] ), \n               cut=0\n               )\n\nplt.savefig('plots-latest/FS2-KNN-boxplot-meanregress.pdf', \n                format='pdf', \n                bbox_inches='tight', \n                dpi=900\n                )\nplt.show()")
+    plt.figure(figsize=(12,7))
+    sns.violinplot(x='Class balance', 
+                   y='Prediction', 
+                   data =  pd.concat( [ pd.DataFrame({'Prediction':all_ps[i], 
+                                                      'Class balance':round(class_ranges[i],                                                                     2)  })
+                                       for i in range(len(all_ps)) ] ), 
+                   cut=0
+                  )
+    
+    plt.savefig('plots-latest/FS2-KNN-boxplot-meanregress.pdf', 
+                format='pdf', 
+                bbox_inches='tight', 
+                dpi=900
+               )
 
 
-    get_ipython().run_cell_magic('time', '', "plt.figure(figsize=(12,7))\nsns.swarmplot( x='Class balance', \n               y='Prediction', \n               data =  pd.concat( [ pd.DataFrame({'Prediction':all_ps[i], \n                                               'Class balance':round(class_ranges[i], \n                                                                     2)\n                                              })\n                                       for i in range(len(all_ps)) ] ),\n              size=5,\n              color='k', \n#               alpha=0.05\n#                cut=0\n           )\n\n# plt.savefig('plots-latest/FS2-KNN-boxplot-meanregress.pdf', \n#                 format='pdf', \n#                 bbox_inches='tight', \n#                 dpi=900\n#                 )\nplt.show()")
+    plt.figure(figsize=(12,7))
+    sns.swarmplot( x='Class balance', 
+                  y='Prediction', 
+                  data =  pd.concat( [ pd.DataFrame({'Prediction':all_ps[i], 
+                                                     'Class balance':round(class_ranges[i], 
+                                                                           2)
+                                                    })
+                                      for i in range(len(all_ps)) ] ),
+                  size=5,
+                  color='k', 
+                  #               alpha=0.05
+                  #                cut=0
+                 )
+    
+    plt.savefig('plots-latest/FS2-KNN-boxplot-meanregress.pdf', 
+                format='pdf', 
+                bbox_inches='tight',
+                dpi=900
+                )
 
 
     # ### Through the regression to the mean, we see the same anti-leakage class-balance impact ML performance on leave-one-out CV
@@ -420,7 +451,8 @@ def main():
                   for train_index, test_index in loo.split(X) ]
         return(roc_auc_score(y,vals))
 
-    get_ipython().run_cell_magic('time', '', 'roc_sims = [[ simulate_loo_aurocs(pos_frac = pf) for i in range(10) ]\n                for pf in class_ranges ] ')
+    roc_sims = [[ simulate_loo_aurocs(pos_frac = pf) for i in range(10) ]
+                for pf in class_ranges ]
 
 
 
@@ -468,7 +500,12 @@ def main():
     # ### Next, we show the same analysis as above, but repeated aceross different regularization levels; we note that less regularization means we allow for more noise in the system, which does mask these signals. However, the overall auROCs are stil significantly below 0.5
 
 
-    get_ipython().run_cell_magic('time', '', 'roc_sims = [ [[ simulate_loo_aurocs(pos_frac = pf,\n                                    reg_level=reg_level_C, \n                                    smp_size=250\n                                    ) for i in range(10) ]\n                for pf in class_ranges ] \n                for reg_level_C in [1e-4, 1e-3, 1e-2, 1e-1, 1, 1e10] ]')
+    roc_sims = [ [[ simulate_loo_aurocs(pos_frac = pf,
+                                        reg_level=reg_level_C, 
+                                        smp_size=250
+                                       ) for i in range(10) ]
+                  for pf in class_ranges ] 
+                for reg_level_C in [1e-4, 1e-3, 1e-2, 1e-1, 1, 1e10] ]
 
 
     plt.figure(figsize=(12,9))
@@ -491,12 +528,12 @@ def main():
 
 
     plt.figure(figsize=(12,9))
-    sns.heatmap(np.array( [ [np.mean(b) for b in a] for a in roc_sims] ).T[::-1], 
+    sns.heatmap(np.array( [ [np.mean(b) for b in a] for a in roc_sims] )[::-1].T[::-1], 
                 cmap=sns.color_palette("coolwarm", as_cmap=True),
                 vmin=0,
                 vmax=1,
                 xticklabels=[ '$10^{' + str(int(a)) + '}$'
-                                 for a in np.log10( [1e-4, 1e-3, 1e-2, 1e-1, 1, 1e10] ) ],
+                                 for a in np.log10( [1e-4, 1e-3, 1e-2, 1e-1, 1, 1e10] )[::-1] ],
                 yticklabels=[str(a)[:2] for a in class_ranges.round(2)[::-1]*100]
                )
 
@@ -524,14 +561,16 @@ def main():
                   for train_index, test_index in loo.split(X) ]
         return(roc_auc_score(y,vals))
 
-
-    get_ipython().run_cell_magic('time', '', 'np.random.seed(0)\nrf_roc_sims = [[ simulate_rf_loo_aurocs(pos_frac = pf) for i in range(10) ]\n                for pf in class_ranges ] ')
+    
+    np.random.seed(0)
+    rf_roc_sims = [[ simulate_rf_loo_aurocs(pos_frac = pf) for i in range(10) ]
+                   for pf in class_ranges ]
 
     plt.figure(figsize=(12,7))
     sns.boxplot(x = flatten( [[round(class_ranges[i], 1)]*10 for i in range(len(rf_roc_sims))] ), 
                 y = flatten( rf_roc_sims ), 
                fliersize=0)
-    sns.swarmplot(x = flatten( [[round(class_ranges[i], 1)]*10 for i in range(len(rf_roc_sims))] ), 
+    sns.swarmplot(x = flatten( [[round(class_ranges[i], 1)]*10 for i in range(len(rf_roc_sims))]), 
                 y = flatten( rf_roc_sims ), 
                  color='black', 
                  s=10)
@@ -566,7 +605,9 @@ def main():
         return(roc_auc_score(y,vals))
 
 
-    get_ipython().run_cell_magic('time', '', 'np.random.seed(0)\nknn_roc_sims = [[ simulate_knn_loo_aurocs(pos_frac = pf) for i in range(10) ]\n                  for pf in class_ranges ] ')
+    np.random.seed(0)
+    knn_roc_sims = [[ simulate_knn_loo_aurocs(pos_frac = pf) for i in range(10) ]
+                    for pf in class_ranges ]
 
 
     plt.figure(figsize=(12,7))
@@ -641,7 +682,9 @@ def main():
         return(roc_auc_score(y,vals))
 
 
-    get_ipython().run_cell_magic('time', '', 'np.random.seed(0)\nzscore_roc_sims = [[ simulate_loo_zscore_aurocs(pos_frac = pf) for i in range(10) ]\n                        for pf in class_ranges ] ')
+    np.random.seed(0)
+    zscore_roc_sims = [[ simulate_loo_zscore_aurocs(pos_frac = pf) for i in range(10) ]
+                       for pf in class_ranges ]
 
 
     plt.figure(figsize=(12,7))
@@ -685,7 +728,8 @@ def main():
                                                                        .5).pvalue))
 
 
-    get_ipython().run_cell_magic('time', '', 'zscore_roc_sims_nn = [[ simulate_loo_zscore_aurocsNN(pos_frac = pf) for i in range(10) ]\n                        for pf in class_ranges ] ')
+    zscore_roc_sims_nn = [[ simulate_loo_zscore_aurocsNN(pos_frac = pf) for i in range(10) ]
+                          for pf in class_ranges ]
 
 
     plt.figure(figsize=(12,7))
@@ -758,7 +802,9 @@ def main():
         return(roc_auc_score(y,vals))
 
 
-    get_ipython().run_cell_magic('time', '', 'np.random.seed(0)\nrebalanced_roc_sims = [[ simulate_rebalanced_loo_aurocs(pos_frac = pf) for i in range(10) ]\n                        for pf in class_ranges ] ')
+    np.random.seed(0)
+    rebalanced_roc_sims = [[ simulate_rebalanced_loo_aurocs(pos_frac = pf) for i in range(10) ]
+                           for pf in class_ranges ]
 
 
     plt.figure(figsize=(12,7))
@@ -805,16 +851,21 @@ def main():
                 bbox_inches='tight')
 
 
-    get_ipython().run_cell_magic('time', '', 'rebalanced_roc_sims = [ [[ simulate_rebalanced_loo_aurocs(pos_frac = pf,\n                                    reg_level=reg_level_C, \n                                    smp_size=250\n                                    ) for i in range(10) ]\n                for pf in class_ranges ] \n                for reg_level_C in [1e-4, 1e-3, 1e-2, 1e-1, 1, 1e10] ]')
+    rebalanced_roc_sims = [ [[ simulate_rebalanced_loo_aurocs(pos_frac = pf,
+                                                              reg_level=reg_level_C, 
+                                                              smp_size=250
+                                                             ) for i in range(10) ]
+                             for pf in class_ranges ] 
+                           for reg_level_C in [1e-4, 1e-3, 1e-2, 1e-1, 1, 1e10] ]
 
 
     plt.figure(figsize=(12,9))
-    sns.heatmap(np.array( [ [np.mean(b) for b in a] for a in rebalanced_roc_sims] ).T[::-1], 
+    sns.heatmap(np.array( [ [np.mean(b) for b in a] for a in rebalanced_roc_sims] )[::-1].T[::-1], 
                 cmap=sns.color_palette("coolwarm", as_cmap=True),
                 vmin=0,
                 vmax=1,
                 xticklabels=[ '$10^{' + str(int(a)) + '}$'
-                                 for a in np.log10( [1e-4, 1e-3, 1e-2, 1e-1, 1, 1e10] ) ],
+                                 for a in np.log10( [1e-4, 1e-3, 1e-2, 1e-1, 1, 1e10] )[::-1] ],
                 yticklabels=[str(a)[:2] for a in class_ranges.round(2)[::-1]*100]
                )
 
@@ -862,7 +913,9 @@ def main():
 
     # ### doing a stratified leave-10-out solves leakage in all our specific class-balances
 
-    get_ipython().run_cell_magic('time', '', 'stratified_roc_sims = [[ simulate_stratified_lno_aurocs(pos_frac = pf, \n                                                        lno_n=10) for i in range(10) ]\n                        for pf in class_ranges ] ')
+    stratified_roc_sims = [[ simulate_stratified_lno_aurocs(pos_frac = pf, 
+                                                            lno_n=10) for i in range(10) ]
+                           for pf in class_ranges ]
 
 
     plt.figure(figsize=(12,7))
@@ -884,7 +937,9 @@ def main():
 
     # ### Doing a stratified leave-2-out solves the 50% class-balance, although some leakage remains in other cases
 
-    get_ipython().run_cell_magic('time', '', 'np.random.seed(0)\nstratified_roc_sims = [[ simulate_stratified_lno_aurocs(pos_frac = pf, \n                                                        lno_n=2) for i in range(10) ]\n                        for pf in class_ranges ] ')
+    np.random.seed(0)
+    stratified_roc_sims = [[ simulate_stratified_lno_aurocs(pos_frac = pf,                                                       lno_n=2) for i in range(10) ]
+                           for pf in class_ranges ]
 
     plt.figure(figsize=(12,7))
     sns.boxplot(x = flatten( [[round(class_ranges[i], 1)]*10 for i in range(len(stratified_roc_sims))] ), 
@@ -911,7 +966,12 @@ def main():
     # ### Doing a stratified leave-5-out solves leakage in all the specific class-balances of 0.2, 0.4. 0.6, and 0.8, which can be perfectly represented with 5 samples
 
 
-    get_ipython().run_cell_magic('time', '', 'np.random.seed(123)\nstratified_roc_sims = [[ simulate_stratified_lno_aurocs(pos_frac = pf, \n                                                        lno_n=5, \n                                                        reg_level=1e-3)\n                        for i in range(10) ]\n                        for pf in class_ranges ] ')
+    np.random.seed(123)
+    stratified_roc_sims = [[ simulate_stratified_lno_aurocs(pos_frac = pf, 
+                                                            lno_n=5, 
+                                                            reg_level=1e-3)
+                                                    for i in range(10) ]
+                           for pf in class_ranges ]
 
 
     plt.figure(figsize=(12,7))
@@ -973,7 +1033,13 @@ def main():
 
     # ### the general LPO anti-leakage heatmap trends demonstrate specific class-balance-dependent solutions
 
-    get_ipython().run_cell_magic('time', '', 'stratified_roc_sims = [ [[ simulate_stratified_lno_aurocs(pos_frac = pf, \n                                                        lno_n=lno_n_, \n                                                         reg_level=1e-3\n                                                         ) \n                          for i in range(10) ]\n                        for pf in class_ranges ] \n                        for lno_n_ in range(1,11) ]')
+    stratified_roc_sims = [ [[ simulate_stratified_lno_aurocs(pos_frac = pf, 
+                                                              lno_n=lno_n_, 
+                                                              reg_level=1e-3
+                                                             ) 
+                              for i in range(10) ]
+                             for pf in class_ranges ] 
+                           for lno_n_ in range(1,11) ]
 
 
     plt.figure(figsize=(12,9))
@@ -984,7 +1050,7 @@ def main():
                 xticklabels=range(1,11),
                 yticklabels=[str(a)[:2] for a in class_ranges.round(2)[::-1]*100]
                )
-    plt.title('auROCs of stratified LNO on logistic regression models with simulated random data. \n' +          'This approach solves anti-leakage when all the right Ns and class balances align')
+    plt.title('auROCs of stratified LPO on logistic regression models with simulated random data. \n' +          'This approach solves anti-leakage when all the right Ns and class balances align')
 
     plt.xlabel("P left-out")
     plt.ylabel('Class balance (%)')

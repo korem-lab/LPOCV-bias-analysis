@@ -18,8 +18,14 @@ from sklearn.model_selection import LeaveOneOut
 from rebalancedleaveoneout import RebalancedLeaveOneOut
 from sklearn.linear_model import LogisticRegression
 
-def main():
+from scipy.stats import combine_pvalues
 
+import sys
+sys.path.append('../')
+import delong
+
+def main():
+    seed=1
     x1 = pd.read_csv('no-correction-results.csv', index_col=0)
     x2 = pd.read_csv('with-correction-results.csv', index_col=0)
 
@@ -91,27 +97,6 @@ def main():
                dpi=900, 
                bbox_inches='tight')
 
-    ## run the delong tests across all the pvals from other rocs
-    import sys
-    sys.path.append('../')
-    import delong
-
-    print( np.power(10, delong.delong_roc_test(x1.Severe_irAE, 
-                                        x1.CompositeModelLOOCV,
-                                        x2.CompositeModelLOOCV
-                                        ) )
-         )
-
-
-
-    from scipy.stats import combine_pvalues
-
-    print( combine_pvalues([0.01457697, 
-                     0.539665, 
-                     0.24930627, 
-                     0.12259377
-                     ]
-                   ) )
 
     def make_roc_df(df_tmp, group_num, run):
         fpr, tpr, _ = roc_curve(df_tmp.labels, 
@@ -158,14 +143,47 @@ def main():
                   )
                 for rr in bootstrapped_preds.run_num.unique() 
                ]) ).drop('run', axis=1)
+    
+    
+    bootstrapped_preds_baseline = pd.read_csv('bootstrapped-no-correction-results.csv', 
+                                             index_col=0)
+    bootstrapped_preds_baseline['labels'] =    bootstrapped_preds_baseline['Severe_irAE']
+    bootstrapped_preds_baseline['predictions']=bootstrapped_preds_baseline['CompositeModelLOOCV']
+
+    rocs_base = format_rocs( pd.concat( [ 
+        make_roc_df(bootstrapped_preds_baseline.loc[bootstrapped_preds_baseline.run_num==rr], 
+                  'LOOCV (median auROC = {:.3f})'.format(
+                      np.median( [ roc_auc_score(bootstrapped_preds_baseline.loc[bootstrapped_preds_baseline.run_num==rr].labels,
+                             bootstrapped_preds_baseline.loc[bootstrapped_preds_baseline.run_num==rr].predictions
+                             ) 
+              for rr in bootstrapped_preds_baseline.run_num.unique() ] )
+                       ), 
+                  rr
+                  )
+                for rr in bootstrapped_preds_baseline.run_num.unique() 
+               ]) ).drop('run', axis=1)
 
 
     rocs_all = pd.concat([
-                            pd.DataFrame({'FPR':fpr, 
-                                          'TPR':tpr, 
-                    'Group':'LOOCV (original; auROC = {:.3f})'.format(auc(fpr, tpr))}), 
-                            rocs ], axis=0
-                    ).reset_index(drop=True)
+                      rocs_base, 
+                      rocs 
+                    ], axis=0
+                ).reset_index(drop=True)
+
+    
+    
+    n_tot=bootstrapped_preds.shape[0]/10 ## total # of patients, since there are 10 iters
+    bootstrapped_preds['pat_num'] = bootstrapped_preds.index % n_tot
+    bootstrapped_preds_baseline['pat_num'] = bootstrapped_preds_baseline.index % n_tot
+
+
+    # bootstrapped_preds
+    print( np.power(10, delong.delong_roc_test(
+                bootstrapped_preds.groupby('pat_num')[['predictions','labels']].mean().labels, 
+                bootstrapped_preds_baseline.groupby('pat_num')[['predictions','labels']].mean().predictions,
+                bootstrapped_preds.groupby('pat_num')[['predictions','labels']].mean().predictions
+            ) )
+         )
 
 
     pal = sns.color_palette()
@@ -175,19 +193,10 @@ def main():
                       y='TPR', 
                       hue='Group',
                       linewidth=5, 
-                      data=rocs_all.loc[rocs_all.Group.str[0]=='R'], 
+                      data=rocs_all, 
                       ci=95, 
-                      palette={rocs_all.Group.values[-1]:pal.as_hex()[1]}
                       )
-
-    ax = sns.lineplot(x='FPR', 
-                      y='TPR', 
-                      hue='Group',
-                      linewidth=5, 
-                      data=rocs_all.loc[rocs_all.Group.str[0]=='L'], 
-                      ci=0, 
-                      ax=ax
-                      )
+    
     ax.legend_.set_title(None)
     
     plt.legend(loc='lower center')
@@ -208,7 +217,7 @@ def main():
                             )
     y = x1.Severe_irAE.values
 
-    np.random.seed(1)
+    np.random.seed(seed)
     loo=LeaveOneOut()
     regs=np.logspace(-10, 6, 17)
     regs=np.logspace(-6, 6, 13)
@@ -222,7 +231,7 @@ def main():
                                     )
                         for reg_level in regs ]
 
-    np.random.seed(1)
+    np.random.seed(seed)
     regs=np.logspace(-6, 6, 13)
     rloo=RebalancedLeaveOneOut()
     rloocv_perfs = [ roc_auc_score(y, 
@@ -233,7 +242,7 @@ def main():
                                                     )[:, 1][0]
                                   for train_index, test_index in rloo.split(X, 
                                                                             y, 
-                                                                            seed=1) ]
+                                                                            seed=seed) ]
                                     )
                         for reg_level in regs ]
 
@@ -256,6 +265,14 @@ def main():
                                           )\
                 .set_properties(**{'font-size': '20px'}
                             ).to_excel('../plots-latest/ICI-regularization.xlsx')
+    
+    
+    ### looking at hte combination of pvalues from all four delong tests
+    print( combine_pvalues([0.12437051, 
+                            0.04828611, 
+                             0.03233037,
+                             0.38976368
+                            ]) )
 
     
 if __name__=='__main__':

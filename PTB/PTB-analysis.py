@@ -12,6 +12,10 @@ from skbio.stats.composition import clr
 from sklearn.model_selection import LeaveOneOut
 from sklearn.metrics import roc_auc_score
 
+import sys
+sys.path.append('..')
+import delong
+
 
 def main():
     md = pd.read_csv('ptb_metadata.csv', 
@@ -153,6 +157,35 @@ def main():
         all_group_preds.append(vals_corrected)
 
         print( roc_auc_score(y, vals_corrected) )
+        
+    np.random.seed(1)
+    all_group_preds_base = []
+    for __ in range(10):
+        vals_base=[]
+        loo=LeaveOneOut()
+        for train_index, test_index in loo.split(X):    
+            lr = LogisticRegressionCV(Cs=np.logspace(-3, 3, 7),
+                                      max_iter=100,  
+                                      solver='newton-cg'
+                                      )
+
+            vals_base.append( lr.fit( X[train_index], y[train_index] )                        
+                             .predict_proba(X[test_index])[:, 1][0]
+                       )
+
+        all_group_preds_base.append(vals_base)
+
+        print( roc_auc_score(y, vals_base) )
+        
+        
+        
+    print( np.power(10, 
+                 delong.delong_roc_test(
+                        y,
+                        np.vstack( all_group_preds_base ).mean(axis=0),
+                        np.vstack( all_group_preds ).mean(axis=0) ,
+                         )[0] 
+                ) )
 
 
     def make_roc_df(df_tmp, group_num, run):
@@ -164,6 +197,8 @@ def main():
                               'Group':group_num, 
                               'run':run})
               )
+    
+    
 
     def format_rocs(summary):
         ## this function ensures all unceratainty ranges along the roc curve
@@ -194,11 +229,22 @@ def main():
                )
 
 
+    rocs_base = format_rocs( pd.concat([ make_roc_df( pd.DataFrame({'labels':y, 
+                    'predictions':a
+                    }), 
+                     'LOOCV (median auROC: {:.3f})'.format(
+                                     np.median( [roc_auc_score(y, a) 
+                                                 for a in all_group_preds_base] )), 
+                     i
+                     )
+          for i,a in enumerate(all_group_preds_base) ]
+                          )
+               )
+
     rocs_all = pd.concat([
-                            pd.DataFrame({'FPR':fpr, 
-                                          'TPR':tpr, 
-                    'Group':'LOOCV (original; auROC = {:.3f})'.format(auc(fpr, tpr))}), 
-                            rocs ], axis=0
+                          rocs_base, 
+                          rocs ], 
+                    axis=0
                     ).reset_index(drop=True)
 
     pal = sns.color_palette()
@@ -209,17 +255,9 @@ def main():
                       y='TPR', 
                       hue='Group',
                       linewidth=5, 
-                      data=rocs_all.loc[rocs_all.Group.str[0]=='L'], 
-                      ci=0,
-                      )
-
-    ax = sns.lineplot(x='FPR', 
-                      y='TPR', 
-                      hue='Group',
-                      linewidth=5, 
-                      data=rocs_all.loc[rocs_all.Group.str[0]=='R'], 
+                      data=rocs_all, 
                       ci=95, 
-                      palette={rocs_all.Group.values[-1]:pal.as_hex()[1]}
+#                       palette={rocs_all.Group.values[-1]:pal.as_hex()[1]}
                       )
 
 

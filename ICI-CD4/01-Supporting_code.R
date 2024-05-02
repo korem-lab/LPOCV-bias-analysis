@@ -68,10 +68,10 @@ makeCompositeModel <- function(input, index, actCD4mem_ceiling, LOOCV,
                       )
             
             }else{
-              rf <- glm(formula=as.factor(Severe_irAE)~AMCD4 + TCR_clonotype_diversity_ShannonEntropy,
+              rf <- glm(formula=as.factor(Severe_irAE) ~ AMCD4 + TCR_clonotype_diversity_ShannonEntropy,
                         data = input2[-c(i, 
                                          which(input2$Severe_irAE != input2$Severe_irAE[i]) %>%
-                                           sample(1)), ], ## G. AUSTIN: THIS IS OUR NOVELTY
+                                         sample(1)), ], ## G. AUSTIN: THIS IS OUR NOVELTY
                         family="binomial"  )
             }
             #Run composite model on all pts
@@ -151,7 +151,6 @@ x_wc <-  makeCompositeModel(x, "", actCD4mem_ceiling, TRUE, LOOCV_correct = T)
 x_nc %>% write.csv('no-correction-results.csv')
 x_wc %>% write.csv('with-correction-results.csv')
 
-
 set.seed(123)
 multiple_runs <- list()
 for(i in 1:10){
@@ -161,5 +160,18 @@ for(i in 1:10){
   print(pROC::roc(x_wc$Severe_irAE, x_wc_$CompositeModelLOOCV ))
 }
 
-multiple_runs %>% data.table::rbintlist() %>% write.csv('bootstrapped-with-correction-results.csv')
+multiple_runs %>% data.table::rbindlist() %>% write.csv('bootstrapped-with-correction-results.csv')
+
+
+set.seed(123)
+multiple_runs <- list()
+for(i in 1:10){
+  x_wc_ <- makeCompositeModel(x, "", actCD4mem_ceiling, TRUE, LOOCV_correct = F) %>% 
+    mutate(run_num=i)
+  multiple_runs[[i]] <- x_wc_
+  print(pROC::roc(x_wc$Severe_irAE, x_wc_$CompositeModelLOOCV ))
+}
+
+multiple_runs %>% data.table::rbindlist() %>% write.csv('bootstrapped-no-correction-results.csv')
+
 

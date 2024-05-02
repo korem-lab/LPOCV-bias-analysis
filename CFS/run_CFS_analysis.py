@@ -3,6 +3,8 @@
 
 import sys
 sys.path.append('PhageIPSeq_CFS-main/')
+sys.path.append('..')
+import delong
 
 import sklearn
 from sklearn.utils import (
@@ -249,7 +251,7 @@ def main():
 #     plt.show()
 
     multiple_res_base=[]
-    np.random.seed(1)
+#     np.random.seed(1)
     for ss in range(10):
         res = {}
         np.random.seed(ss)
@@ -382,7 +384,7 @@ def main():
                       hue='Group',
                       linewidth=5, 
                       data=rocs_all.loc[rocs_all.Group.str[0]=='R'], 
-                      ci=99, 
+                      ci=95, 
                       palette={rocs_all.Group.values[-1]:pal.as_hex()[1]}
                       )
 
@@ -391,7 +393,7 @@ def main():
                       hue='Group',
                       linewidth=5, 
                       data=rocs_all.loc[rocs_all.Group.str[0]=='L'], 
-                      ci=99, 
+                      ci=95, 
                       ax=ax
                       )
     ax.legend_.set_title(None)
@@ -453,7 +455,7 @@ def main():
                       hue='Group',
                       linewidth=5, 
                       data=rocs_all.loc[rocs_all.Group.str[0]=='R'], 
-                      ci=99, 
+                      ci=95, 
                       palette={rocs_all.Group.values[-1]:pal.as_hex()[1]}
                       )
 
@@ -462,7 +464,7 @@ def main():
                       hue='Group',
                       linewidth=5, 
                       data=rocs_all.loc[rocs_all.Group.str[0]=='L'], 
-                      ci=99, 
+                      ci=95, 
                       ax=ax
                       )
     ax.legend_.set_title(None)
@@ -473,6 +475,32 @@ def main():
                dpi=900, 
                bbox_inches='tight')
     
+    
+    ## print delong pvals
+    
+    print( np.power(10, 
+             delong.delong_roc_test(
+                    multiple_res[0].labels,
+                    np.vstack([a['xgboost'].values
+                               for a in multiple_res_base]
+                               ).mean(axis=0) ,
+                    np.vstack([a['xgboost'].values
+                               for a in multiple_res]
+                               ).mean(axis=0) ,
+                     )[0] 
+            ) )
+
+    print( np.power(10, 
+             delong.delong_roc_test(
+                    multiple_res[0].labels,
+                    np.vstack([a['GBR'].values
+                               for a in multiple_res_base]
+                               ).mean(axis=0) ,
+                    np.vstack([a['GBR'].values
+                               for a in multiple_res]
+                               ).mean(axis=0) ,
+                     )[0] 
+            ) )
 if __name__=='__main__':
     main()
 
