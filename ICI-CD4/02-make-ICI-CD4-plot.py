@@ -133,7 +133,7 @@ def main():
 
 
     rocs = format_rocs( pd.concat( [ make_roc_df(bootstrapped_preds.loc[bootstrapped_preds.run_num==rr], 
-                  'RLOOCV (median auROC = {:.3f})'.format(
+                  'RLOOCV (auROC = {:.3f})'.format(
                       np.median( [ roc_auc_score(bootstrapped_preds.loc[bootstrapped_preds.run_num==rr].labels,
                              bootstrapped_preds.loc[bootstrapped_preds.run_num==rr].predictions
                              ) 
@@ -152,7 +152,7 @@ def main():
 
     rocs_base = format_rocs( pd.concat( [ 
         make_roc_df(bootstrapped_preds_baseline.loc[bootstrapped_preds_baseline.run_num==rr], 
-                  'LOOCV (median auROC = {:.3f})'.format(
+                  'LOOCV (auROC = {:.3f})'.format(
                       np.median( [ roc_auc_score(bootstrapped_preds_baseline.loc[bootstrapped_preds_baseline.run_num==rr].labels,
                              bootstrapped_preds_baseline.loc[bootstrapped_preds_baseline.run_num==rr].predictions
                              ) 
@@ -197,9 +197,17 @@ def main():
                       ci=95, 
                       )
     
-    ax.legend_.set_title(None)
+    plt.plot([0,1], 
+             [0,1], 
+             color='black', 
+             linestyle = '--', 
+             linewidth=5)
+    plt.ylim([0,1])
+    plt.xlim([0,1])
+    ax.legend().set_title(None)
+    plt.legend(loc='lower right')
     
-    plt.legend(loc='lower center')
+#     plt.legend(loc='lower center')
 
     plt.title('Correcting for LOOCV distributional bias\n'+             'slightly improves prediction of ICI adverse outcomes\n'+             'from T Cell abundance and diversity')
 

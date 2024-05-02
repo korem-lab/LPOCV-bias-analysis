@@ -219,7 +219,7 @@ def main():
     rocs = format_rocs( pd.concat([ make_roc_df( pd.DataFrame({'labels':y, 
                     'predictions':a
                     }), 
-                     'RLOOCV (median auROC: {:.3f})'.format(
+                     'RLOOCV (auROC: {:.3f})'.format(
                                      np.median( [roc_auc_score(y, a) 
                                                  for a in all_group_preds] )), 
                      i
@@ -232,7 +232,7 @@ def main():
     rocs_base = format_rocs( pd.concat([ make_roc_df( pd.DataFrame({'labels':y, 
                     'predictions':a
                     }), 
-                     'LOOCV (median auROC: {:.3f})'.format(
+                     'LOOCV (auROC: {:.3f})'.format(
                                      np.median( [roc_auc_score(y, a) 
                                                  for a in all_group_preds_base] )), 
                      i
@@ -257,11 +257,18 @@ def main():
                       linewidth=5, 
                       data=rocs_all, 
                       ci=95, 
-#                       palette={rocs_all.Group.values[-1]:pal.as_hex()[1]}
                       )
 
-
-    ax.legend_.set_title(None)
+    plt.plot([0,1], 
+             [0,1], 
+             color='black', 
+             linestyle = '--', 
+             linewidth=5)
+    plt.ylim([0,1])
+    plt.xlim([0,1])
+    ax.legend().set_title(None)
+    plt.legend(loc='lower right')
+    
 
     plt.savefig('../plots-latest/PTB-roc-with-bootstrap.pdf', 
                format='pdf', 

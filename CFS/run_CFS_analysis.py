@@ -345,7 +345,7 @@ def main():
 
     rocs = format_rocs( pd.concat([ 
                         make_roc_df( a,
-                     'RLOOCV (median auROC: {:.3f})'.format(
+                     'RLOOCV (auROC: {:.3f})'.format(
                                      np.median([roc_auc_score(a.labels, a.predictions) 
                                                 for a in multiple_res ] )
                      ), 
@@ -358,7 +358,7 @@ def main():
 
     rocs_base = format_rocs( pd.concat([ 
                         make_roc_df( a,
-                     'LOOCV (median auROC: {:.3f})'.format(
+                     'LOOCV (auROC: {:.3f})'.format(
                                      np.median([roc_auc_score(a.labels, a.predictions) 
                                                 for a in multiple_res_base ] )
                      ), 
@@ -396,8 +396,17 @@ def main():
                       ci=95, 
                       ax=ax
                       )
-    ax.legend_.set_title(None)
-    plt.legend(loc='lower center')
+    
+    plt.plot([0,1], 
+             [0,1], 
+             color='black', 
+             linestyle = '--', 
+             linewidth=5)
+    plt.ylim([0,1])
+    plt.xlim([0,1])
+    ax.legend().set_title(None)
+    plt.legend(loc='lower right')
+    
 
     plt.savefig('../plots-latest/CFS-xgboost-roc-with-bootstrap.pdf', 
                format='pdf', 
@@ -415,7 +424,7 @@ def main():
 
     rocs = format_rocs( pd.concat([ 
                         make_roc_df( a,
-                     'RLOOCV (median auROC: {:.3f})'.format(
+                     'RLOOCV (auROC: {:.3f})'.format(
                                      np.median([roc_auc_score(a.labels, a.predictions) 
                                                 for a in multiple_res ] )
                      ), 
@@ -428,7 +437,7 @@ def main():
 
     rocs_base = format_rocs( pd.concat([ 
                         make_roc_df( a,
-                     'LOOCV (median auROC: {:.3f})'.format(
+                     'LOOCV (auROC: {:.3f})'.format(
                                      np.median([roc_auc_score(a.labels, a.predictions) 
                                                 for a in multiple_res_base ] )
                      ), 
@@ -467,8 +476,16 @@ def main():
                       ci=95, 
                       ax=ax
                       )
-    ax.legend_.set_title(None)
-    plt.legend(loc='lower center')
+    plt.plot([0,1], 
+             [0,1], 
+             color='black', 
+             linestyle = '--', 
+             linewidth=5)
+    plt.ylim([0,1])
+    plt.xlim([0,1])
+    ax.legend().set_title(None)
+    plt.legend(loc='lower right')
+    
 
     plt.savefig('../plots-latest/CFS-gbr-roc-with-bootstrapping.pdf', 
                format='pdf', 
