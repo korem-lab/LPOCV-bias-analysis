@@ -652,8 +652,7 @@ def main():
         loo = LeaveOneOut()
 
         vals = [ zscore( 
-                    LogisticRegression(C=reg_level, 
-                                       solver='liblinear'
+                    LogisticRegression(C=reg_level,
                                        )\
                                 .fit(X[train_index], y[train_index])\
                                 .predict_proba(X)[:, 1]
@@ -771,8 +770,7 @@ def main():
     plt.xlabel('Class balance')
     plt.ylabel('LOOCV auROC')
 
-    plt.title('LOOCV Nearest neighbor predictors with zscoring random data\n'  +          'Consistently outperforms a random guess\n' +           '1-sample T test vs "0.5" p = {:.3f}'.format(ttest_1samp(flatten( zscore_roc_sims_nn ), 
-                                                                       .5).pvalue))
+    plt.title('LOOCV Nearest neighbor predictors with zscoring random data\n'  +          'Consistently outperforms a random guess\n' +           '1-sample T test vs "0.5" p = {:.3f}'.format(ttest_1samp(flatten( zscore_roc_sims_nn ), .5).pvalue))
 
 
     print(  np.quantile(np.array( [ [np.mean(b) for b in a] for a in zscore_roc_sims] ).T,  
@@ -794,7 +792,6 @@ def main():
         X = np.random.rand(smp_size, n_features) 
         rloo = RebalancedLeaveOneOut()
         vals = [ LogisticRegression(C=reg_level,
-                                    solver='liblinear'
                                     )\
                         .fit(X[train_index], y[train_index])\
                         .predict_proba(X[test_index])[:, 1][0]
@@ -899,8 +896,7 @@ def main():
         X = np.random.rand(smp_size, n_features) 
         skf = StratifiedKFold(n_splits=smp_size//lno_n, 
                               shuffle=True)
-        vals = [ ( LogisticRegression(C=reg_level,
-                                      solver='liblinear'
+        vals = [ ( LogisticRegression(C=reg_level
                                     )\
                         .fit(X[train_index], y[train_index])\
                         .predict_proba(X[test_index])[:, 1], 
