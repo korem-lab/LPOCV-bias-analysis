@@ -824,6 +824,7 @@ def main():
 
 
     print(  pd.Series(flatten( rebalanced_roc_sims )).describe() )
+    print(ttest_1samp( flatten( rebalanced_roc_sims ), 0.5 ) )
 
 
     plt.figure(figsize=(12,7))
@@ -873,6 +874,13 @@ def main():
                 format='pdf', 
                 dpi=900, 
                 bbox_inches='tight')
+    
+    ##FIIND
+    print('RLOOCV HEAT')
+    from scipy.stats import combine_pvalues
+    print(combine_pvalues( [ ttest_1samp(c, 0.5).pvalue
+            for c in  np.array( [ [np.mean(b) for b in a] for a in rebalanced_roc_sims] 
+                                  )[::-1].T[::-1].T ] ) )
 
 
     from sklearn.model_selection import StratifiedKFold
@@ -1022,9 +1030,14 @@ def main():
     print( pd.Series( flatten( [stratified_roc_sims[i] for i in range(len(stratified_roc_sims)) if i%2==1] 
                ) ).describe() )
 
-
+    print('LPOCV EVEN')
     print(  ttest_1samp(flatten( [stratified_roc_sims[i] for i in range(len(stratified_roc_sims)) if i%2==1] 
                        ), 0.5) )
+    
+    print('LPOCV ODD')
+    print(  ttest_1samp(flatten( [stratified_roc_sims[i] for i in range(len(stratified_roc_sims)) if i%2==0] 
+                       ), 0.5) )
+
 
 
     # ### the general LPO anti-leakage heatmap trends demonstrate specific class-balance-dependent solutions
